@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "device_name": "Kamera-A",
+        "status": "active",
+        "threat_score": 85
+    },
+    {
+        "id": 2,
+        "device_name": "Kamera-B",
+        "status": "inactive",
+        "threat_score": 20
+    },
+    {
+        "id": 3,
+        "device_name": "Kamera-C",
+        "status": "active",
+        "threat_score": 45
+    },
+    {
+        "id": 4,
+        "device_name": "Kamera-D",
+        "status": "active",
+        "threat_score": 90
+    }
+]
