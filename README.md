@@ -1,4 +1,5 @@
 # HerAI Studios: Yerel Veri ve API İşleme Uygulaması
+<img width="1356" height="706" alt="Ekran Resmi 2026-10-28 17 01 12" src="https://github.com/user-attachments/assets/3b26bef0-0468-49d9-95a7-77134e673ebf" />
 
 HerAI Studios staj değerlendirme case study çözümü. Uygulama JSON, Excel (`.xlsx`, `.xls`) ve CSV formatındaki cihaz kayıtlarını okur, kayıtları güvenlik odaklı bir doğrulamadan geçirir, aktif ve kritik cihazları belirler, aktif cihazların ortalama tehdit skorunu hesaplar ve sonuçları terminale yazdırır. Ek olarak ücretsiz bir API'den (JSONPlaceholder) ilk 5 gönderinin başlığını gösterir; API çökerse yerel analiz yine de tamamlanır.
 
