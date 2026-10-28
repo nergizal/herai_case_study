@@ -205,11 +205,3 @@ herai_case_study/
 - **Eşik sabiti:** Kritik eşik (`50`) `analyzer.CRITICAL_THRESHOLD` sabitidir, sunum katmanı da aynı sabiti kullanır.
 - **Eklenmeyen teknolojiler:** Case'in gerektirmediği için web arayüzü, veritabanı ve Docker kullanılmadı.
 
-## Bilinen Sınırlamalar
-
-- `threat_score` için değer aralığı (ör. 0–100) kontrol edilmez; case aralık belirtmediği için sonlu her sayı geçerlidir.
-- `status` büyük/küçük harf duyarlıdır; `"Active"` geçersiz sayılır ve uyarıyla atlanır.
-- API'den yalnızca ilk 5 kayda bakılır. Bu 5 kayıt içinde geçersiz olan (sözlük olmayan, `title`'ı eksik veya boş) varsa sessizce atlanır; bu durumda 5'ten az başlık görünebilir.
-- API zaman aşımı 15 saniyedir (`fetch_first_five_posts(timeout=...)` ile değiştirilebilir).
-- Varsayılan veri yolu çalışma dizinine göredir; program proje kök dizininden çalıştırılmalıdır.
-- Yalnızca macOS ve Python 3.11.4 üzerinde test edilmiştir.
