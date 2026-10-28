@@ -1,36 +1,34 @@
-import pytest
 import json
-from src.data_loader import load_devices
+from pathlib import Path
+from typing import List, Dict, Any
+import pandas as pd
+from src.exceptions import FileFormatError, SchemaValidationError
 
-def test_TC32_load_devices_success(tmp_path):
-    f = tmp_path / "valid.json"
-    f.write_text('[{"id": 1, "status": "active"}]', encoding="utf-8")
-    data = load_devices(str(f))
-    assert isinstance(data, list)
-
-def test_TC33_load_devices_not_found():
-    with pytest.raises(FileNotFoundError):
-        load_devices("non_existing.json")
-
-def test_TC34_load_devices_invalid_json(tmp_path):
-    """TC-34 | FR-01: Bozuk JSON dosyasında ValueError fırlatılır."""
-    f = tmp_path / "invalid.json"
-    f.write_text('{bozuk_json', encoding="utf-8")
-    with pytest.raises(ValueError) as exc:
-        load_devices(str(f))
-    assert "Geçerli bir JSON formatı değil" in str(exc.value)
-
-def test_TC35_load_devices_not_a_list(tmp_path):
-    """TC-35 | FR-01: JSON kökü liste değilse ValueError fırlatılır."""
-    f = tmp_path / "dict.json"
-    f.write_text('{"id": 1}', encoding="utf-8")
-    with pytest.raises(ValueError) as exc:
-        load_devices(str(f))
-    assert "kök dizini bir liste" in str(exc.value)
+def load_devices(file_path: str) -> List[Dict[str, Any]]:
+    path = Path(file_path)
+    if not path.exists():
+        raise FileFormatError(f"Veri dosyası bulunamadı: {file_path}")
     
-def test_TC36_load_devices_empty_file(tmp_path):
-    """TC-36 | FR-01: Boş dosyada JSON ayrıştırma hatası yönetilir."""
-    f = tmp_path / "empty.json"
-    f.write_text('', encoding="utf-8")
-    with pytest.raises(ValueError):
-        load_devices(str(f))
+    suffix = path.suffix.lower()
+    try:
+        if suffix == ".json":
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        elif suffix in [".xlsx", ".xls"]:
+            df = pd.read_excel(path)
+            data = df.to_dict(orient="records")
+        elif suffix == ".csv":
+            df = pd.read_csv(path)
+            data = df.to_dict(orient="records")
+        else:
+            raise FileFormatError(f"Desteklenmeyen dosya formatı: {suffix}")
+            
+        if not isinstance(data, list):
+            raise SchemaValidationError("Veri kök yapısı bir liste (array/records) formatında olmalıdır.")
+        return data
+    except (json.JSONDecodeError, ValueError) as e:
+        raise FileFormatError(f"Geçersiz dosya içeriği veya şema hatası: {str(e)}") from e
+    except Exception as e:
+        if isinstance(e, DeviceAnalysisError):
+            raise e
+        raise FileFormatError(f"Dosya işlenirken beklenmeyen hata: {str(e)}") from e

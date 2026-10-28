@@ -1,55 +1,53 @@
-"""Cihaz kayıtlarının doğrulanması (FR-02)."""
+from typing import List, Dict, Any, Tuple
 import math
-from typing import Any, Dict, List, Optional, Tuple
+import re
 
-REQUIRED_FIELDS = ("id", "device_name", "status", "threat_score")
-VALID_STATUSES = frozenset({"active", "inactive"})
-
-def find_record_problem(record: Any) -> Optional[str]:
-    """Kayıt geçersizse sebebini, geçerliyse None döndürür."""
+def validate_device_record(record: Any, seen_ids: set) -> Tuple[bool, str]:
     if not isinstance(record, dict):
-        return "kayıt bir nesne değil"
-        
-    for field in REQUIRED_FIELDS:
-        if field not in record:
-            return f"'{field}' alanı eksik"
+        return False, "Kayıt bir sözlük  yapısında değil."
+    
+    required_keys = ["id", "device_name", "status", "threat_score"]
+    for key in required_keys:
+        if key not in record:
+            return False, f"Zorunlu alan eksik: '{key}'"
             
-    device_name = record["device_name"]
-    if not isinstance(device_name, str) or not device_name.strip():
-        return "'device_name' boş olmayan bir metin olmalı"
+    dev_id = record.get("id")
+    if isinstance(dev_id, int) and dev_id <= 0:
+        return False, f"Geçersiz 'id' (0 veya negatif olamaz): {dev_id}"
+    if not isinstance(dev_id, (int, str)):
+        return False, "Geçersiz 'id' tipi."
         
-    status = record["status"]
-    if not isinstance(status, str) or status not in VALID_STATUSES:
-        return f"'status' geçersiz: {status!r}"
+    if dev_id in seen_ids:
+        return False, f"Duplicate ID tespit edildi: {dev_id}"
         
-    score = record["threat_score"]
-    
-    if isinstance(score, bool) or not isinstance(score, (int, float)):
-        return f"'threat_score' sayı olmalı, gelen: {score!r}"
+    name = record.get("device_name")
+    if not isinstance(name, str) or not name.strip():
+        return False, f"Geçersiz veya boş 'device_name': {name!r}"
+    if re.search(r"[<>]", name):
+        return False, f"Zararlı karakter içeren 'device_name' reddedildi: {name!r}"
         
-    if not math.isfinite(score):
-        return f"'threat_score' sonlu bir sayı olmalı, gelen: {score!r}"
+    status = record.get("status")
+    if status not in ["active", "inactive"]:
+        return False, f"Geçersiz 'status' değeri: {status!r}"
         
-    return None
+    score = record.get("threat_score")
+    if isinstance(score, bool) or not isinstance(score, (int, float)) or math.isnan(score) or math.isinf(score):
+        return False, f"'threat_score' sayısal olmalı, gelen: {score!r}"
+        
+    return True, ""
 
-def _record_label(index: int, record: Any) -> str:
-    if isinstance(record, dict) and "id" in record:
-        return f"{index}. kayıt (id={record['id']})"
-    return f"{index}. kayıt"
-
-def validate_devices(records: List[Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
-    """Kayıtları doğrular, geçerli kayıtlar, uyarı mesajlarını döndürür.
-    Geçersiz kayıtlar atlanır ve her biri için bir uyarı üretilir.
-    Geçerli kayıtların sırası korunur.
-    """
-    valid_devices: List[Dict[str, Any]] = []
-    warnings: List[str] = []
+def validate_devices(raw_records: List[Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
+    valid_devices = []
+    warnings = []
+    seen_ids = set()
     
-    for index, record in enumerate(records, start=1):
-        problem = find_record_problem(record)
-        if problem is None:
+    for index, record in enumerate(raw_records):
+        is_valid, err_msg = validate_device_record(record, seen_ids)
+        if is_valid:
             valid_devices.append(record)
+            seen_ids.add(record.get("id"))
         else:
-            warnings.append(f"{_record_label(index, record)} atlandı: {problem}")
+            rec_id = record.get("id", "N/A") if isinstance(record, dict) else "N/A"
+            warnings.append(f"Kayıt indeks {index} (id={rec_id}) reddedildi: {err_msg}")
             
     return valid_devices, warnings

@@ -1,43 +1,40 @@
 # İzlenebilirlik Matrisi (Traceability Matrix)
 
-Bu belge, HerAI Studios vaka çalışmasındaki iş kurallarının, işlevsel  ve işlevsel olmayan  gereksinimlerin, kullanım senaryolarının , kabul kriterlerinin  ve otomatik test senaryolarının modüler bazda uçtan uca haritasını sunar.
+Bu belge, HerAI Studios vaka çalışmasındaki iş kurallarının, işlevsel (FR) ve işlevsel olmayan (NFR) gereksinimlerin, kullanım senaryolarının (UC), kabul kriterlerinin (AC) ve otomatik test senaryolarının (TC) uçtan uca izlenebilirliğini sunar.
 
 ## 1. İşlevsel Gereksinimler ve Test Matrisi
 
 | Gereksinim (FR) | Kabul Kriteri (AC) | Use Case (UC) | İlgili Test Senaryoları (TC) | Kod Modülü |
 | :--- | :--- | :--- | :--- | :--- |
-| **FR-01:** JSON dosyasını oku (Varsayılan + Argüman) | AC-01-1, 01-2, 01-3 | UC-01, UC-04 | TC-32, TC-33, TC-34, TC-35, TC-36, TC-38, TC-41 | `data_loader.py`, `main.py` |
-| **FR-02:** Kayıtları doğrula, geçersizi atla (Strateji B) | AC-02-1, 02-2, 02-3 | UC-02 | TC-11...TC-19, TC-21 | `validator.py` |
-| **FR-03:** Yalnızca 'active' cihazları filtrele | AC-03-1 | UC-03 | TC-20 (Resmi Veri Testi) | `analyzer.py` |
-| **FR-04:** threat_score >= 50 kritik cihaz işareti | AC-04-1, 04-2, 04-3 | UC-03 | TC-22, TC-23 | `analyzer.py` |
-| **FR-05:** Aktif cihaz ortalamasını hesapla | AC-05-1, 05-2 | UC-03 | TC-20, TC-24, TC-42 | `analyzer.py` |
-| **FR-06:** Sonuçları okunaklı formatta yazdır | AC-06-1 | UC-05 | TC-40 | `presenter.py` |
-| **FR-07:** API'den ilk 5 başlığı güvenli çek | AC-07-1, 07-2, 07-3, 07-4 | UC-06 | TC-25, TC-26, TC-27, TC-28, TC-29, TC-30, TC-31 | `api_client.py` |
-| **FR-08:** API düşse bile yerel analiz tamamlanır | AC-08-1 | UC-07 | TC-37, TC-39 | `main.py` |
+| **FR-01:** Çoklu format veri yükleme (JSON/Excel/CSV) | AC-01-1, 01-2, 01-3 | UC-01, UC-04 | TC-32...TC-36, TC-38, TC-41, Robot-E2E | `data_loader.py`, `main.py` |
+| **FR-02:** Kayıt doğrulama ve güvenlik sanitasyonu (Duplicate ID, XSS, Negative ID) | AC-02-1, 02-2, 02-3 | UC-02 | TC-11...TC-19, TC-21, Fuzzing-Test | `validator.py` |
+| **FR-03:** Yalnızca `active` cihazları filtrele | AC-03-1 | UC-03 | TC-20, TC-21 | `analyzer.py` |
+| **FR-04:** `threat_score >= 50` kritik cihaz işareti | AC-04-1, 04-2 | UC-03 | TC-22, TC-23 | `analyzer.py` |
+| **FR-05:** Aktif cihaz ortalamasını hesapla (yoksa `None` dön) | AC-05-1, 05-2 | UC-03 | TC-20, TC-24, TC-42 | `analyzer.py` |
+| **FR-06:** Sonuçları hassas formatta yazdır (2 ondalık basamak) | AC-06-1 | UC-05 | TC-40 | `presenter.py` |
+| **FR-07:** API'den ilk 5 başlığı güvenli çek (15 sn timeout) | AC-07-1...07-4 | UC-06 | TC-25...TC-31 | `api_client.py` |
+| **FR-08:** API çökse bile yerel analiz tamamlanır (çıkış kodu 0) | AC-08-1 | UC-07 | TC-37, TC-39 | `main.py` |
 
----
+## 2. Kullanım Senaryoları (Use Cases)
 
-## 2. Kullanım Senaryoları (Use Cases) Detaylı Listesi
+- **UC-01 (Veri yükleme, mutlu yol):** Kullanıcı CLI üzerinden JSON, Excel veya CSV dosyasını verir. Sistem veriyi `pandas`/`json` ile okuyup belleğe aktarır. *(TC-32, TC-38, Robot-E2E)*
+- **UC-02 (Güvenlik denetimi ve sanitasyon):** Sistem ham veride bozuk kayıtları, XSS etiketlerini (`<script>`), negatif/mükerrer ID'leri ve geçersiz tipleri tespit eder. Geçersizleri atlar ve uyarı üretir. *(TC-11...TC-19, TC-21, `test_fuzzing_and_malicious_payloads`)*
+- **UC-03 (Analiz ve istatistik):** Yalnızca `active` cihazlar filtrelenir, skoru ≥ 50 olanlar kritik işaretlenir ve ortalama tehdit skoru hesaplanır. *(TC-20, TC-22, TC-23, TC-24, TC-42)*
+- **UC-04 (Hatalı dosya/şema yönetimi):** Olmayan veya bozuk formatlı dosyada traceback verilmez; özel istisna (`FileFormatError`) yakalanır ve çıkış kodu `1` döner. *(TC-33...TC-36, TC-41)*
+- **UC-05 (Konsol raporlama):** Analiz sonuçları ve varsa uyarılar düzenli formatta konsola basılır. *(TC-40)*
+- **UC-06 (Harici API entegrasyonu):** JSONPlaceholder servisinden ilk 5 gönderi çekilir. *(TC-25...TC-31)*
+- **UC-07 (Hata toleransı ve izolasyon):** API'de zaman aşımı (> 15 sn) veya bağlantı hatası olsa da yerel analiz sunulur ve program `0` çıkış koduyla biter. *(TC-37, TC-39)*
 
-* **UC-01 (Yerel Veri Yükleme - Mutlu Yol):** Kullanıcı komut satırından `main.py`'yi çalıştırır. Sistem `data/devices.json` dosyasını hatasız okur ve ham veriyi belleğe alır. *(İlgili Testler: TC-32, TC-38)*
-* **UC-02 (Veri Doğrulama ve Filtreleme - İstisna Akışı):** Sistem ham verideki bozuk kayıtları (eksik alan, bool tuzağı, NaN/inf değerler) inceler. Geçersizleri Strateji B gereği atlar, `stderr` üzerinden uyarı üretir ve geçerli kayıtları korur. *(İlgili Testler: TC-11...TC-19, TC-21)*
-* **UC-03 (İş Mantığı ve İstatistik Analizi):** Temizlenen veriler arasından yalnızca `active` olanlar seçilir, skoru $\ge 50$ olanlar kritik olarak işaretlenir ve ortalama tehdit skoru hesaplanır. *(İlgili Testler: TC-20, TC-22, TC-23, TC-24, TC-42)*
-* **UC-04 (Hatalı Dosya Yönetimi - Alternatif Akış):** Kullanıcı var olmayan veya bozuk formatlı bir JSON dosyası yollarsa, sistem çökmez (traceback vermez), kontrollü hata basar ve işletim sistemine çıkış kodu `1` döner. *(İlgili Testler: TC-33, TC-34, TC-35, TC-36, TC-41)*
-* **UC-05 (Konsol Raporlama):** Sistem; aktif cihazları, kritik cihazları, istatistikleri ve uyarıları düzenli ve renkli/okunaklı bir formatta konsola yazdırır. *(İlgili Testler: TC-40)*
-* **UC-06 (Harici API Entegrasyonu):** Sistem harici JSONPlaceholder servisinden (`/posts`) ilk 5 gönderinin başlığını güvenli bir şekilde çeker. *(İlgili Testler: TC-25...TC-31)*
-* **UC-07 (Hata Toleransı ve İzolasyon):** Harici API çağrısında zaman aşımı (timeout) veya bağlantı kopması olsa bile yerel analiz raporu tam olarak sunulur ve program başarıyla `0` çıkış koduyla tamamlanır. *(İlgili Testler: TC-37, TC-39)*
+## 3. Fonksiyonel Olmayan Gereksinimler (NFR)
 
----
-
-## 3. Fonksiyonel Olmayan Gereksinimler (NFR) ve Karşılıkları
-
-| NFR ID | Gereksinim Tanımı | Mimari / Teknik Karşılık |
+| NFR ID | Gereksinim | Mimari / Teknik Karşılık |
 | :--- | :--- | :--- |
-| **NFR-01** | Python 3.11+ Uyumu | Python 3.11 özellikleriyle geliştirildi ve test edildi. |
-| **NFR-02** | Kod Okunabilirliği ve Temizlik | Tip ipuçları (Type Hints), saf fonksiyonlar ve Docstring standardı uygulandı. |
-| **NFR-03** | Test Edilebilirlik | İş mantığı I/O ve baskı işlemlerinden izole edildi; saf fonksiyonlar yazıldı. |
-| **NFR-04** | Beklenen Hatalarda Traceback Yok | Dosya yokluğu veya bozuk JSON durumlarında kontrollü hata mesajı ve çıkış kodu `1` üretilir. |
-| **NFR-05** | API Zaman Aşımı (Timeout) Tanımlı | Harici isteklerde `timeout=5.0` saniye sınırı zorunlu tutuldu. |
-| **NFR-06** | Minimum Bağımlılık (KISS / YAGNI) | Yalnızca `requests` ve `pytest` paketleri kullanıldı; ek framework yüklenmedi. |
-| **NFR-07** | Internetsiz Koşabilen Testler | Tüm API testleri `unittest.mock` ile izole edildi; internet bağımlılığı sıfır. |
-| **NFR-08** | Net Dokümantasyon | Kurulum, çalıştırma ve iş kuralları README.md içinde detaylandırıldı. |
+| **NFR-01** | Python 3.11+ uyumu | Python 3.11 ortamında geliştirildi ve doğrulandı. |
+| **NFR-02** | Clean code standardı | Gereksiz yorumlar temizlendi, type hint'ler ve modüler fonksiyonlar uygulandı. |
+| **NFR-03** | Test edilebilirlik | İş mantığı I/O'dan ayrıldı, saf fonksiyonlar yazıldı. |
+| **NFR-04** | Kontrollü hata yönetimi | Traceback engellendi; `src/exceptions.py` altında özel istisna hiyerarşisi kuruldu. |
+| **NFR-05** | API zaman aşımı | `timeout=15.0` saniye sınırı getirildi. |
+| **NFR-06** | Yük ve performans dayanıklılığı | 10.000 kayıtlık veri seti < 0.1 sn'de işlendi (`test_performance_stress_10k_records`). |
+| **NFR-07** | İnternetsiz koşabilen testler | API testleri `unittest.mock` ile izole edildi. |
+| **NFR-08** | Zaman damgalı HTML raporlama | `conftest.py` hook'u ile her koşumda `reports/test_report_YYYY-MM-DD_HH-MM-SS.htm` üretilir. |
+| **NFR-09** | Uçtan uca kabul testleri | Robot Framework (`tests/device_analysis.robot`) ile CLI seviyesinde test edildi. |

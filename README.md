@@ -1,33 +1,55 @@
 # HerAI Studios: Yerel Veri ve API İşleme Uygulaması
 
-HerAI Studios staj değerlendirme case study çözümü. Uygulama bir JSON dosyasındaki cihaz kayıtlarını okur, aktif ve kritik cihazları belirler, aktif cihazların ortalama tehdit skorunu hesaplar ve sonuçları terminale yazdırır. Ek olarak ücretsiz bir API'den (JSONPlaceholder) ilk 5 gönderinin başlığını gösterir.
+HerAI Studios staj değerlendirme case study çözümü. Uygulama JSON, Excel (`.xlsx`, `.xls`) ve CSV formatındaki cihaz kayıtlarını okur, kayıtları güvenlik odaklı bir doğrulamadan geçirir, aktif ve kritik cihazları belirler, aktif cihazların ortalama tehdit skorunu hesaplar ve sonuçları terminale yazdırır. Ek olarak ücretsiz bir API'den (JSONPlaceholder) ilk 5 gönderinin başlığını gösterir; API çökerse yerel analiz yine de tamamlanır.
+
+Test kapsamı: birim, entegrasyon, güvenlik/fuzzing, performans (10.000 kayıt) ve **Robot Framework** ile uçtan uca (E2E) kabul testleri.
 
 ## Özellikler
 
-- JSON dosyasından cihaz kaydı okuma (varsayılan `data/devices.json`, isteğe bağlı dosya yolu argümanı)
-- Her kaydın doğrulanması: geçersiz kayıt **atlanır ve uyarı yazılır**, program çökmez
+- **Çoklu format:** `.json`, `.xlsx`, `.xls` ve `.csv` dosyalarını uzantıdan otomatik algılar (varsayılan `data/devices.json`, isteğe bağlı dosya yolu argümanı)
+- **Kayıt doğrulama (Skip & Warn):** geçersiz kayıt **atlanır ve uyarı yazılır**, program çökmez
+  - Mükerrer (duplicate) `id` reddedilir
+  - `id` pozitif olmalıdır (negatif ve 0 reddedilir)
+  - `device_name` içindeki `<script>` ve zararlı HTML etiketleri (XSS) süzülür
+  - Katı tip denetimi: `bool`, `NaN`, `inf` ve metin türevi skorlar elenir
 - `status == "active"` olan cihazların filtrelenmesi
 - Aktif cihazlar arasında `threat_score >= 50` olanların "KRİTİK" işaretlenmesi
-- Aktif cihazların ortalama tehdit skorunun hesaplanması (2 ondalık basamak)
-- API'den ilk 5 başlığın çekilmesi; API hata verirse yerel analiz yine de gösterilir
+- Aktif cihazların ortalama tehdit skoru (2 ondalık basamak)
+- API'den ilk 5 başlığın çekilmesi (15 sn zaman aşımı); API hata verirse yerel analiz yine de gösterilir
 - Anlamlı çıkış kodları: başarıda `0`, yerel veri hatasında `1`
-- `pytest` ile 61 otomatik test (API testlerinde internet gerekmez, istekler mock'lanır)
+- Her `pytest` koşumunda zaman damgalı HTML test raporu (`reports/`)
+- API testlerinde internet gerekmez, istekler mock'lanır
+
+## Sistem Mimarisi
+
+Uygulama, sorumlulukların ayrılması ilkesine göre katmanlıdır: veri erişimi, doğrulama, iş mantığı ve sunum ayrı modüllerdedir.
+
+### Katmanlı Mimari ve Veri Akışı
+
+![Katmanlı mimari ve veri akışı](docs/diagrams/mimari-akis.png)
+
+### Çalışma Akışı (Sekans Diyagramı)
+
+Başarılı akış, dosya hatası durumundaki erken çıkış (çıkış kodu `1`) ve API izolasyonu (API hatası yerel analizi etkilemez, çıkış kodu `0`):
+
+![Sekans diyagramı](docs/diagrams/sekans.png)
 
 ## Kullanılan Teknolojiler
 
 | Teknoloji | Neden |
 |---|---|
-| Python 3.11 | Liste/sözlük ve list comprehension ile bu problem kısa ve okunaklı çözülür |
-| `json` (standart kütüphane) | JSON okumak için ek bağımlılık gerekmez |
+| Python 3.11+ | Liste/sözlük ve list comprehension ile problem kısa ve okunaklı çözülür |
+| `pandas` + `openpyxl` | Excel / CSV / JSON verisini tek motorla okumak için |
 | `requests` | Timeout, HTTP durum kontrolü ve hata yönetimi için okunaklı API |
-| `pytest` | Parametreli testler ve `capsys`, `tmp_path` gibi yardımcılar |
+| `pytest` + `pytest-html` | Parametreli testler, `capsys`/`tmp_path` yardımcıları ve HTML raporlama |
+| `Robot Framework` | CLI seviyesinde E2E kabul testleri |
 | `unittest.mock` (standart kütüphane) | API testlerini internetten bağımsız yapmak için |
 
 ## Gereksinimler
 
-- Python 3.11 (test edilen sürüm: 3.11.4)
+- Python 3.11+ (geliştirme ve test: 3.11.4)
 - macOS üzerinde geliştirilmiş ve test edilmiştir
-- `requests` (çalıştırmak için), `pytest` (testler için)
+- Bağımlılıklar `requirements.txt` içindedir
 
 ## Kurulum
 
@@ -38,38 +60,42 @@ cd herai_case_study
 python3 -m venv venv
 source venv/bin/activate
 
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 ```
-
-Yalnızca uygulamayı çalıştırmak için `requirements-dev.txt` yerine `requirements.txt` yeterlidir.
 
 ## Çalıştırma
 
 Komutlar **proje kök dizininden** ve sanal ortam aktifken çalıştırılmalıdır (varsayılan veri yolu göreli olduğu için).
 
 ```bash
-# Varsayılan veri dosyası (data/devices.json)
+# Varsayılan JSON verisi
 python3 main.py
 
-# Başka bir dosya ile
+# Excel verisi
+python3 main.py data/devices.xlsx
+
+# Bozuk kayıt içeren deneme verisi
 python3 main.py data/devices_bad.json
 ```
 
 ## Testleri Çalıştırma
 
 ```bash
+# Birim, entegrasyon, güvenlik/fuzzing ve performans testleri
 python3 -m pytest -v
+
+# Robot Framework E2E kabul testleri
+robot --timestamp-outputs --outputdir reports/robot_logs tests/device_analysis.robot
 ```
 
-Son çalıştırmanın çıktısı: [`docs/test-results.txt`](docs/test-results.txt) (61 test, tamamı geçti, Python 3.11.4).
+Toplam 58 test vardır ve tamamı geçer.
 
-| Dosya | Test sayısı | Kapsam |
-|---|---|---|
-| `tests/test_validator.py` | 32 | Kayıt doğrulama (eksik alan, tip hataları, bool/NaN, geçersiz status) |
-| `tests/test_analyzer.py` | 12 | Filtreleme, kritik cihaz, sınır değer (50/49), ortalama, bozuk veriyle pipeline |
-| `tests/test_api_client.py` | 7 | Başarı, timeout, bağlantı/HTTP hatası, bozuk JSON, liste olmayan yanıt, geçersiz kayıtlar |
-| `tests/test_data_loader.py` | 5 | Geçerli dosya, dosya yok, bozuk JSON, kök liste değil, boş dosya |
-| `tests/test_main.py` | 5 | Çıkış kodları (0/1), API hatasında yerel sonuç, terminal çıktı biçimi |
+### Test Raporları
+
+Raporlar üzerine yazılmadan, zaman damgasıyla `reports/` klasörüne kaydedilir:
+
+- **Pytest:** `reports/test_report_YYYY-MM-DD_HH-MM-SS.htm` (herhangi bir tarayıcıda açılır)
+- **Robot Framework:** `reports/robot_logs/report.htm`
 
 Gereksinim, kabul kriteri, use case, test ve kod modülü ilişkisi için: [`docs/traceability.md`](docs/traceability.md).
 
@@ -82,19 +108,19 @@ Gereksinim, kabul kriteri, use case, test ve kod modülü ilişkisi için: [`doc
       HERAI STUDIOS - CIHAZ ANALIZ RAPORU
 =============================================
 
-[📊 TÜM AKTİF CİHAZLAR]
+[ TÜM AKTİF CİHAZLAR]
   -> ID #1: Kamera-A - Skor: 85 [KRİTİK]
   -> ID #3: Kamera-C - Skor: 45 [NORMAL]
   -> ID #4: Kamera-D - Skor: 90 [KRİTİK]
 
-[🚨 KRİTİK CİHAZLAR (Skor >= 50)]
+[ KRİTİK CİHAZLAR (Skor >= 50)]
   -> ID #1: Kamera-A (Skor: 85)
   -> ID #4: Kamera-D (Skor: 90)
 
-[📈 ÖZET İSTATİSTİK]
+[ÖZET İSTATİSTİK]
   -> Aktif Cihaz Ortalama Tehdit Skoru: 73.33
 
-[🌐 HARİCİ API DUYURULARI (JSONPlaceholder - İlk 5)]
+[ HARİCİ API DUYURULARI (JSONPlaceholder - İlk 5)]
   [#1] sunt aut facere repellat provident occaecati excepturi optio reprehenderit
   [#2] qui est esse
   [#3] ea molestias quasi exercitationem repellat qui ipsa sit aut
@@ -106,22 +132,22 @@ Gereksinim, kabul kriteri, use case, test ve kod modülü ilişkisi için: [`doc
 `python3 main.py data/devices_bad.json` (bozuk kayıtlar uyarıyla atlanır; API bölümü internet durumuna bağlıdır, burada gösterilmemiştir):
 
 ```
-[⚠️ UYARILAR / DOĞRULAMA HATALARI]
+[ UYARILAR / DOĞRULAMA HATALARI]
   -> 3. kayıt (id=3) atlandı: 'threat_score' alanı eksik
   -> 4. kayıt (id=4) atlandı: 'threat_score' sayı olmalı, gelen: 'seksen'
   -> 5. kayıt (id=5) atlandı: 'threat_score' sayı olmalı, gelen: True
   -> 6. kayıt (id=6) atlandı: 'status' geçersiz: 'Active'
   -> 7. kayıt atlandı: kayıt bir nesne (dict) değil
 
-[📊 TÜM AKTİF CİHAZLAR]
+[ TÜM AKTİF CİHAZLAR]
   -> ID #1: Kamera-A - Skor: 85 [KRİTİK]
   -> ID #8: Kamera-H - Skor: 50 [KRİTİK]
 
-[🚨 KRİTİK CİHAZLAR (Skor >= 50)]
+[KRİTİK CİHAZLAR (Skor >= 50)]
   -> ID #1: Kamera-A (Skor: 85)
   -> ID #8: Kamera-H (Skor: 50)
 
-[📈 ÖZET İSTATİSTİK]
+[ ÖZET İSTATİSTİK]
   -> Aktif Cihaz Ortalama Tehdit Skoru: 67.50
 ```
 
@@ -136,22 +162,33 @@ Var olmayan dosya verilirse hata `stderr`'e yazılır ve çıkış kodu `1` olur
 ```
 herai_case_study/
 ├── main.py                 # Giriş noktası: akışı yönetir, çıkış kodunu döndürür
+├── conftest.py             # Pytest zaman damgalı .htm rapor hook'u
 ├── pytest.ini
-├── requirements.txt        # Çalışma zamanı bağımlılığı (requests)
-├── requirements-dev.txt    # Test bağımlılıkları (pytest)
+├── requirements.txt        # Proje ve test bağımlılıkları
 ├── data/
 │   ├── devices.json        # Case'in örnek verisi
+│   ├── devices.xlsx        # Örnek Excel verisi
 │   └── devices_bad.json    # Bozuk kayıt içeren deneme verisi
 ├── src/
-│   ├── data_loader.py      # JSON dosyasını okur
-│   ├── validator.py        # Kayıtları doğrular, uyarı üretir
+│   ├── exceptions.py       # Özel hata hiyerarşisi
+│   ├── data_loader.py      # Çoklu format (JSON/Excel/CSV) veri yükleyici
+│   ├── validator.py        # Kayıtları doğrular ve süzer, uyarı üretir
 │   ├── analyzer.py         # Filtreleme, kritik cihaz, ortalama, analiz akışı
 │   ├── api_client.py       # API isteği ve hata dönüştürme
 │   └── presenter.py        # Terminal çıktısı
-├── tests/                  # pytest testleri
+├── tests/
+│   ├── test_validator.py
+│   ├── test_analyzer.py
+│   ├── test_api_client.py
+│   ├── test_main.py
+│   ├── test_performance_fuzzing.py   # 10.000 kayıt stres ve güvenlik testleri
+│   └── device_analysis.robot         # Robot Framework E2E testleri
+├── reports/                # Zaman damgalı test raporları
 └── docs/
     ├── traceability.md     # İzlenebilirlik matrisi
-    └── test-results.txt    # Son test çalıştırma çıktısı
+    └── diagrams/
+        ├── mimari-akis.png # Katmanlı mimari diyagramı
+        └── sekans.png      # Sekans diyagramı
 ```
 
 ## İş Kuralları
@@ -161,13 +198,14 @@ herai_case_study/
 3. Eşik dahildir: `threat_score >= 50` olan cihaz kritiktir (skoru tam 50 olan kritiktir).
 4. Ortalama, **tüm aktif cihazların** skorlarının aritmetik ortalamasıdır (kritik olmayanlar dahil).
 5. Aktif cihaz yoksa ortalama hesaplanmaz, bilgi mesajı yazılır.
-6. Bir kayıt şu durumlarda geçersizdir ve uyarıyla atlanır: sözlük değilse; `id`, `device_name`, `status` veya `threat_score` alanı eksikse; `device_name` boş ya da metin değilse; `status` `"active"` / `"inactive"` dışındaysa (büyük/küçük harf duyarlıdır); `threat_score` sayı değilse (`true`/`false`, `NaN` ve sonsuz değerler dahil).
+6. Bir kayıt şu durumlarda geçersizdir ve uyarıyla atlanır: sözlük değilse; `id`, `device_name`, `status` veya `threat_score` alanı eksikse; `id` pozitif bir sayı değilse veya daha önce görülmüşse; `device_name` boş ya da metin değilse; `status` `"active"` / `"inactive"` dışındaysa (büyük/küçük harf duyarlıdır); `threat_score` sayı değilse (`true`/`false`, `NaN` ve sonsuz değerler dahil). `device_name` içindeki script/HTML etiketleri süzülür.
 
 ## Tasarım Kararları
 
 - **Doğrulama ayrı bir modülde (`validator.py`):** Tek sorumluluk. Analiz fonksiyonları verinin geçerli olduğunu varsayabilir; bu sayede eksik veri sessizce 0 sayılmaz.
 - **Geçersiz kayıt atlanır, program durmaz:** Tek bir bozuk kayıt tüm analizi öldürmemeli. Her atlanan kayıt için bir uyarı üretilir.
-- **API kodu ayrı modülde (`api_client.py`):** Ağ hatası yerel analizi etkilememeli. API hataları `RuntimeError` olarak tek tipe çevrilir; `main.py` bunu yakalar ve yerel sonuçlar yine gösterilir.
+- **API kodu ayrı modülde (`api_client.py`):** Ağ hatası yerel analizi etkilememeli. API hataları tek bir hata tipine çevrilir; `main.py` bunu yakalar ve yerel sonuçlar yine gösterilir.
+- **Özel hata hiyerarşisi (`exceptions.py`):** Dosya/şema ve API hataları ayrı tiplerle ifade edilir; kullanıcıya traceback yerine anlaşılır mesaj gösterilir.
 - **Bool kontrolü:** Python'da `bool`, `int`'in alt sınıfıdır; `threat_score: true` değerinin skor sayılmaması için ayrıca elenir.
 - **Çıkış kodları:** Yerel veri okunamazsa `1`; API hatası yerel analiz başarılıysa çıkış kodunu değiştirmez (`0`).
 - **API testleri mock'lanır:** Testler internetten bağımsız ve hızlıdır.
@@ -178,8 +216,7 @@ herai_case_study/
 
 - `threat_score` için değer aralığı (ör. 0–100) kontrol edilmez; case aralık belirtmediği için sonlu her sayı geçerlidir.
 - `status` büyük/küçük harf duyarlıdır; `"Active"` geçersiz sayılır ve uyarıyla atlanır.
-- Uyarılar kaydın sırasına (ve varsa `id`'sine) göre verilir; aynı `id`'nin tekrar edip etmediği kontrol edilmez.
 - API'den yalnızca ilk 5 kayda bakılır. Bu 5 kayıt içinde geçersiz olan (sözlük olmayan, `title`'ı eksik veya boş) varsa sessizce atlanır; bu durumda 5'ten az başlık görünebilir.
-- API zaman aşımı 5 saniyedir (`fetch_first_five_posts(timeout=...)` ile değiştirilebilir).
+- API zaman aşımı 15 saniyedir (`fetch_first_five_posts(timeout=...)` ile değiştirilebilir).
 - Varsayılan veri yolu çalışma dizinine göredir; program proje kök dizininden çalıştırılmalıdır.
 - Yalnızca macOS ve Python 3.11.4 üzerinde test edilmiştir.

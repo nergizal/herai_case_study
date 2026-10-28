@@ -1,26 +1,38 @@
 [
     {
         "id": 1,
-        "device_name": "Kamera-A",
+        "device_name": "Edge-Gateway-01",
         "status": "active",
         "threat_score": 85
     },
     {
         "id": 2,
-        "device_name": "Kamera-B",
-        "status": "inactive",
-        "threat_score": 20
+        "device_name": "IP-Camera-North",
+        "status": "active",
+        "threat_score": 25
     },
     {
         "id": 3,
-        "device_name": "Kamera-C",
-        "status": "active",
-        "threat_score": 45
+        "device_name": "Smart-Lock-MainGate",
+        "status": "inactive",
+        "threat_score": 90
     },
     {
         "id": 4,
-        "device_name": "Kamera-D",
+        "device_name": "Environmental-Sensor-X",
         "status": "active",
-        "threat_score": 90
+        "threat_score": 50
+    },
+    {
+        "id": 5,
+        "device_name": "Router-Core-B",
+        "status": "active",
+        "threat_score": 92
+    },
+    {
+        "id": 6,
+        "device_name": "Motion-Detector-Lobby",
+        "status": "inactive",
+        "threat_score": 15
     }
 ]

@@ -1,19 +1,11 @@
-# Sanal ortam
+reports/
+*.htm
+*.html
+*.xml
+*.log
+.pytest_cache/
+
+__pycache__/
+*.pyc
 venv/
 .venv/
- 
-# Python önbellekleri
-__pycache__/
-*.py[cod]
-.pytest_cache/
- 
-# macOS
-.DS_Store
- 
-# Editör / IDE
-.idea/
-.vscode/
- 
-# Log dosyaları
-*.log
- 
