@@ -8,7 +8,7 @@ Test kapsamı: birim, entegrasyon, güvenlik/fuzzing, performans (10.000 kayıt)
 
 - **Çoklu format:** `.json`, `.xlsx`, `.xls` ve `.csv` dosyalarını uzantıdan otomatik algılar (varsayılan `data/devices.json`, isteğe bağlı dosya yolu argümanı)
 - **Kayıt doğrulama (Skip & Warn):** geçersiz kayıt **atlanır ve uyarı yazılır**, program çökmez
-  - Mükerrer (duplicate) `id` reddedilir
+  -  duplicate `id` reddedilir
   - `id` pozitif olmalıdır (negatif ve 0 reddedilir)
   - `device_name` içindeki `<script>` ve zararlı HTML etiketleri (XSS) süzülür
   - Katı tip denetimi: `bool`, `NaN`, `inf` ve metin türevi skorlar elenir
@@ -20,13 +20,6 @@ Test kapsamı: birim, entegrasyon, güvenlik/fuzzing, performans (10.000 kayıt)
 - Her `pytest` koşumunda zaman damgalı HTML test raporu (`reports/`)
 - API testlerinde internet gerekmez, istekler mock'lanır
 
-## Sistem Mimarisi
-
-Uygulama, sorumlulukların ayrılması ilkesine göre katmanlıdır: veri erişimi, doğrulama, iş mantığı ve sunum ayrı modüllerdedir.
-
-### Katmanlı Mimari ve Veri Akışı
-
-![Katmanlı mimari ve veri akışı](docs/diagrams/mimari-akis.png)
 
 ### Çalışma Akışı (Sekans Diyagramı)
 
