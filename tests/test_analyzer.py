@@ -23,13 +23,13 @@ def test_TC20_case_study_official_sample_data():
 @pytest.mark.parametrize(
     "bad_record",
     [
-        {"id": 2, "device_name": "Cam", "status": "active"}, # eksik skor
-        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": None}, # null skor
-        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": True}, # bool skor
-        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": "seksen"}, # metin skor
-        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": float("nan")}, # NaN skor
-        {"id": 2, "device_name": "Cam"}, # eksik status
-        {"id": 2, "device_name": "Cam", "status": "Active", "threat_score": 90}, # Büyük harfli status
+        {"id": 2, "device_name": "Cam", "status": "active"}, 
+        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": None}, 
+        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": True}, 
+        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": "seksen"}, 
+        {"id": 2, "device_name": "Cam", "status": "active", "threat_score": float("nan")}, 
+        {"id": 2, "device_name": "Cam"},
+        {"id": 2, "device_name": "Cam", "status": "Active", "threat_score": 90}, 
     ],
     ids=["eksik-skor", "null-skor", "bool-skor", "metin-skor", "nan-skor", "eksik-status", "buyuk-harf-status"]
 )
@@ -40,7 +40,6 @@ def test_TC21_pipeline_resilience_to_bad_data(bad_record):
     
     res = run_device_analysis_pipeline(raw_data)
     
-    # 2 kayıttan 1'i geçerli sayılmalı, 1 uyarı çıkmalı, ortalama sağlam kayıt (80.0) üzerinden hesaplanmalı
     assert res["valid_count"] == 1
     assert len(res["warnings"]) == 1
     assert res["avg_score"] == 80.0

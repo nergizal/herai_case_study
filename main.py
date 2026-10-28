@@ -17,18 +17,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     file_path = argv[1] if len(argv) > 1 else DEFAULT_JSON_PATH
     
-    # 1. Yerel Veri Okuma ve İşleme (Kritik Katman)
+    
     try:
         raw_devices = load_devices(file_path)
         pipeline_res = run_device_analysis_pipeline(raw_devices)
     except (FileNotFoundError, ValueError) as e:
         print(f"\n[X] Kritik Hata: {e}\n", file=sys.stderr)
-        return 1  # Çıkış kodu 1 (İşletim sistemine hatayı bildirir)
+        return 1  
     except Exception as e:
         print(f"\n[X] Beklenmeyen Sistem Hatası: {e}\n", file=sys.stderr)
         return 1
 
-    # 2. API Bağlantısı (İzole Katman - API çökse bile sistem 0 ile çıkar)
+    
     api_posts = None
     api_error = None
     try:
@@ -36,7 +36,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     except RuntimeError as e:
         api_error = str(e)
 
-    # 3. Konsol Ekranına Çıktı Verme
+    
     display_local_analysis(
         active_devices=pipeline_res["active_devices"],
         critical_devices=pipeline_res["critical_devices"],
@@ -46,7 +46,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         api_error=api_error
     )
 
-    return 0  # Çıkış kodu 0 (Başarılı)
+    return 0  
 
 if __name__ == "__main__":
     sys.exit(main())

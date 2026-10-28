@@ -16,11 +16,11 @@ def display_local_analysis(
     print("=" * 45)
 
     if warnings:
-        print("\n[⚠️ UYARILAR / DOĞRULAMA HATALARI]")
+        print("\n[UYARILAR VE DOĞRULAMA HATALARI]")
         for w in warnings:
             print(f"  -> {w}")
 
-    print("\n[📊 TÜM AKTİF CİHAZLAR]")
+    print("\n[TÜM AKTİF CİHAZLAR]")
     if not active_devices:
         print("  -> Aktif cihaz bulunmamaktadır.")
     else:
@@ -28,22 +28,22 @@ def display_local_analysis(
             status_tag = "[KRİTİK]" if d["threat_score"] >= CRITICAL_THRESHOLD else "[NORMAL]"
             print(f"  -> ID #{d.get('id', '?')}: {d.get('device_name', '?')} - Skor: {d['threat_score']} {status_tag}")
 
-    print(f"\n[🚨 KRİTİK CİHAZLAR (Skor >= {CRITICAL_THRESHOLD})]")
+    print(f"\n[KRİTİK CİHAZLAR (Skor >= {CRITICAL_THRESHOLD})]")
     if not critical_devices:
         print("  -> Kritik seviyede aktif cihaz yok.")
     else:
         for d in critical_devices:
             print(f"  -> ID #{d.get('id', '?')}: {d.get('device_name', '?')} (Skor: {d['threat_score']})")
 
-    print("\n[📈 ÖZET İSTATİSTİK]")
+    print("\n[ÖZET İSTATİSTİK]")
     if average_score is not None:
         print(f"  -> Aktif Cihaz Ortalama Tehdit Skoru: {average_score:.2f}")
     else:
         print("  -> Aktif cihaz olmadığı için ortalama hesaplanamadı.")
 
-    print("\n[🌐 HARİCİ API DUYURULARI (JSONPlaceholder - İlk 5)]")
+    print("\n[HARİCİ API DUYURULARI (JSONPlaceholder - İlk 5)]")
     if api_error:
-        print(f"  ⚠️ API Hatası: {api_error}")
+        print(f"   API Hatası: {api_error}")
         print("  (Yerel analiz başarıyla tamamlandı.)")
     elif api_posts:
         for post in api_posts:

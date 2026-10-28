@@ -8,12 +8,11 @@ def load_devices(file_path: str) -> List[Any]:
             data = json.load(file)
             
             if not isinstance(data, list):
-                raise ValueError("Geçersiz format: JSON kök dizini bir liste (array) olmalıdır.")
+                raise ValueError("Geçersiz format: JSON kök dizini bir liste  olmalıdır.")
                 
             return data
             
     except FileNotFoundError as e:
-        # Hata zincirini (stack trace) korumak için 'from e' kullanıyoruz
         raise FileNotFoundError(f"Veri dosyası bulunamadı: {file_path}") from e
     except json.JSONDecodeError as e:
         raise ValueError(f"Geçerli bir JSON formatı değil: {file_path}") from e

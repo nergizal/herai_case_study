@@ -3,7 +3,7 @@ from unittest.mock import patch
 from main import main
 
 def test_TC37_main_success_exit_code_zero():
-    """TC-37 | UC-03: Başarılı analizde çıkış kodu 0 olmalıdır (API mock'lı, internet gerekmez)."""
+    """TC-37 | UC-03: Başarılı analizde çıkış kodu 0 olmalıdır ."""
     with patch('main.load_devices', return_value=[]), \
          patch('main.fetch_first_five_posts', return_value=[]):
         assert main(["main.py", "dummy.json"]) == 0

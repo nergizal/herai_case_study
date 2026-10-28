@@ -13,8 +13,7 @@ def fetch_first_five_posts(url: str = API_URL, timeout: float = 5.0) -> List[Dic
         data = response.json()
     except requests.exceptions.Timeout:
         raise RuntimeError("API isteği zaman aşımına uğradı (Timeout).")
-    except requests.exceptions.JSONDecodeError:
-        # JSONDecodeError, RequestException'ın alt sınıfı olduğu için ÖNCE yakalanmalıdır.
+    except (requests.exceptions.JSONDecodeError, ValueError):
         raise RuntimeError("API Veri Format Hatası: Yanıt geçerli bir JSON değil.")
     except requests.exceptions.RequestException as e:
         raise RuntimeError(f"API Bağlantı Hatası: {str(e)}")

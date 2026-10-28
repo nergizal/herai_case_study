@@ -57,12 +57,10 @@ def test_TC30_empty_list_and_less_than_five(mock_get):
     """TC-30 | FR-07: API'de 5'ten az (veya sıfır) kayıt varsa güvenli çalışma."""
     mock_resp = MagicMock()
     
-    # 1 kayıt senaryosu
     mock_resp.json.return_value = [{"id": 1, "title": "Only One"}]
     mock_get.return_value = mock_resp
     assert len(fetch_first_five_posts()) == 1
 
-    # Boş liste senaryosu
     mock_resp.json.return_value = []
     assert len(fetch_first_five_posts()) == 0
 
@@ -70,7 +68,6 @@ def test_TC30_empty_list_and_less_than_five(mock_get):
 def test_TC31_skip_invalid_items(mock_get):
     """TC-31 | FR-07 (AC-07-4): İlk 5 içindeki dict olmayan veya title'ı bozuk kayıtların atlanması."""
     mock_resp = MagicMock()
-    # 1. Geçerli, 2. Dict değil, 3. Title yok, 4. Title boş string, 5. Geçerli
     mock_resp.json.return_value = [
         {"id": 1, "title": "Valid 1"},
         "I am a string, not a dict",
@@ -83,7 +80,6 @@ def test_TC31_skip_invalid_items(mock_get):
 
     posts = fetch_first_five_posts()
     
-    # 5 kayıttan 3 tanesi bozuk olduğu için atlanır, geriye ilk 5 içindeki 2 geçerli kayıt kalır.
     assert len(posts) == 2
     assert posts[0]["title"] == "Valid 1"
     assert posts[1]["title"] == "Valid 2"

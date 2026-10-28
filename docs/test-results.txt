@@ -68,4 +68,4 @@ tests/test_validator.py::test_TC19_any_finite_number_is_valid_no_range_check[100
 tests/test_validator.py::test_TC19_any_finite_number_is_valid_no_range_check[-5] PASSED [ 98%]
 tests/test_validator.py::test_TC19_any_finite_number_is_valid_no_range_check[250] PASSED [100%]
 
-============================== 61 passed in 0.11s ==============================
+============================== 61 passed in 0.08s ==============================
